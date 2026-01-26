@@ -384,6 +384,65 @@ DB_CONFIG = {
 
 ---
 
+## Building and Distribution
+
+### Why You Need to Build Twice
+
+When you build a `.exe` with PyInstaller, the resulting file **only works on the same type of processor** it was built with. This is because different processors speak different "languages" (instruction sets).
+
+There are two main processor types in Windows PCs:
+
+| Processor Type | Also Called | Found In |
+|---------------|-------------|----------|
+| **ARM64** | ARM, aarch64 | Newer Surface Pro (2021+), Surface Pro X, Snapdragon laptops |
+| **x64** | AMD64, x86-64, Intel 64 | Most desktops, older laptops, older Surfaces, Intel/AMD PCs |
+
+**Your machine** has an ARM processor (that's why you have `Python312-arm64`). If you build a `.exe` on your machine, it produces an ARM `.exe` that **only runs on other ARM machines**.
+
+Most people have x64 (Intel/AMD) machines. So if you give them your ARM-built `.exe`, they'll get a "can't run application" error.
+
+### How to Handle This
+
+You have two Python installations:
+
+| Python Install | Processor Type | Path |
+|---------------|----------------|------|
+| Python 3.12 ARM64 | ARM (your machine) | `C:\...\Python312-arm64\python.exe` |
+| Python 3.14 x64 | Intel/AMD (other people) | `C:\...\Python314\python.exe` |
+
+**Build for yourself (testing):**
+```powershell
+& "C:\Users\nickb\AppData\Local\Programs\Python\Python312-arm64\python.exe" build.py gui
+```
+
+**Build for others (distribution):**
+```powershell
+& "C:\Users\nickb\AppData\Local\Programs\Python\Python314\python.exe" build.py gui
+```
+
+### Recommended Workflow
+
+1. **Build with ARM Python** → Test on your machine → Confirm it works
+2. **Rebuild with x64 Python** → Give `dist/finalize-tool/` folder to others
+
+The source code (`.py` files) is identical for both - only the `.exe` output is different.
+
+### How to Tell Which Python Is Which
+
+Run this to see all Python installs on your machine:
+```powershell
+where.exe python
+```
+
+Or check a specific install:
+```powershell
+& "C:\path\to\python.exe" -c "import platform; print(platform.machine())"
+```
+- If it prints `ARM64` → ARM build
+- If it prints `AMD64` → x64 build
+
+---
+
 ## Version History
 
 | Version | Date | Changes |
